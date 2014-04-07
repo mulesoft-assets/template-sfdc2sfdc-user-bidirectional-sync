@@ -28,6 +28,7 @@ payload.remove('LastModifiedDate');
 
 if(!(recordVars['userInTargetInstance'] is NullPayload)) {
 	payload.put('Id',recordVars['userInTargetInstance'].get('Id'));
+	payload.remove('Username');
 } else {
 	// Each Username should be UNIQUE even between different sandboxes of a single instance
 	payload.put('Username',  payload['Username'] + '.target');
@@ -41,7 +42,7 @@ payload.put('ProfileId', profilesMap.get( payload['ProfileId'] ));
 			        <sfdc:upsert config-ref="SalesforceB" externalIdFieldName="Id" type="User" doc:name="upsert user in B">
 			            <sfdc:objects ref="#[payload]"/>
 			        </sfdc:upsert>
-			        <logger message="Upsert Salesforce response: #[payload]" level="INFO" doc:name="log response"/>
+			        <logger message="Upsert Salesforce B response: #[payload]" level="INFO" doc:name="log response"/>
                 </batch:commit>
             </batch:step>
             
@@ -57,6 +58,7 @@ payload.remove('LastModifiedDate');
 
 if(!(recordVars['userInTargetInstance'] is NullPayload)) {
 	payload.put('Id',recordVars['userInTargetInstance'].get('Id'));
+	payload.remove('Username');
 } else {
 	// Each Username should be UNIQUE even between different sandboxes of a single instance
 	payload.put('Username',  payload['Username'] + '.target');
@@ -70,7 +72,7 @@ payload.put('ProfileId', profilesMap.get( payload['ProfileId'] ));
 			        <sfdc:upsert config-ref="SalesforceA" externalIdFieldName="Id" type="User" doc:name="upsert user in A">
 			            <sfdc:objects ref="#[payload]"/>
 			        </sfdc:upsert>
-			        <logger message="Upsert Salesforce response: #[payload]" level="INFO" doc:name="log response"/>
+			        <logger message="Upsert Salesforce A response: #[payload]" level="INFO" doc:name="log response"/>
                 </batch:commit>
             </batch:step>
             
