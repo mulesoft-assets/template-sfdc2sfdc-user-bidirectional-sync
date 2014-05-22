@@ -16,13 +16,13 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
         <batch:threading-profile poolExhaustedAction="WAIT"/>
         <batch:process-records>
             
-            <batch:step name="getUserInBStep" filter-expression="#['B'.equals(flowVars['sourceSystem'])]">
+            <batch:step name="getUserInBStep" accept-expression="'A'.equals(flowVars['sourceSystem'])">
                 <enricher source="#[payload]" target="#[recordVars['userInTargetInstance']]" doc:name="store user">
 	            	<sfdc:query-single config-ref="SalesforceB" query="SELECT Id, Email, LastModifiedDate FROM User WHERE (Email = '#[payload['Email']]')" doc:name="query user from B"/>
                 </enricher>
             </batch:step>
             
-            <batch:step name="upsertUserInBStep" filter-expression="#[('B'.equals(flowVars['sourceSystem'])) || (recordVars['userInTargetInstance'] is NullPayload ? false : (recordVars['userInTargetInstance'].get('LastModifiedDate') &gt;= payload.get('LastModifiedDate')) || ('${sfdc.a.integration.user.id}' == payload.get('LastModifiedById')))]">
+            <batch:step name="upsertUserInBStep" accept-expression="'A'.equals(flowVars['sourceSystem']) &amp;&amp; (recordVars['userInTargetInstance'] is NullPayload || recordVars['userInTargetInstance'].get('LastModifiedDate') &lt; payload.get('LastModifiedDate') &amp;&amp; '${sfdc.a.integration.user.id}' != payload.get('LastModifiedById'))">
 				<expression-component doc:name="prepare user for upsert"><![CDATA[payload.remove('LastModifiedById');
 payload.remove('LastModifiedDate');
 
@@ -46,13 +46,13 @@ payload.put('ProfileId', profilesMap.get( payload['ProfileId'] ));
                 </batch:commit>
             </batch:step>
             
-            <batch:step name="getUserInAStep" filter-expression="#['A'.equals(flowVars['sourceSystem'])]">
+            <batch:step name="getUserInAStep" accept-expression="'B'.equals(flowVars['sourceSystem'])">
                 <enricher source="#[payload]" target="#[recordVars['userInTargetInstance']]" doc:name="store user">
 		            <sfdc:query-single config-ref="SalesforceA" query="SELECT Id, Email, LastModifiedDate FROM User WHERE (Email = '#[payload['Email']]')" doc:name="query user from A"/>
                 </enricher>
             </batch:step>
             
-            <batch:step name="upsertUserInAStep" filter-expression="#[('A'.equals(flowVars['sourceSystem'])) || (recordVars['userInTargetInstance'] is NullPayload ? false : (recordVars['userInTargetInstance'].get('LastModifiedDate') &gt;= payload.get('LastModifiedDate')) || ('${sfdc.b.integration.user.id}' == payload.get('LastModifiedById')))]">
+            <batch:step name="upsertUserInAStep" accept-expression="'B'.equals(flowVars['sourceSystem']) &amp;&amp; (recordVars['userInTargetInstance'] is NullPayload || recordVars['userInTargetInstance'].get('LastModifiedDate') &lt; payload.get('LastModifiedDate') &amp;&amp; '${sfdc.b.integration.user.id}' != payload.get('LastModifiedById'))">
 				<expression-component doc:name="prepare user for upsert"><![CDATA[payload.remove('LastModifiedById');
 payload.remove('LastModifiedDate');
 
