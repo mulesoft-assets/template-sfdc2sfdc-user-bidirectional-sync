@@ -37,7 +37,7 @@ public class BidirectionalUserSyncTestIT extends AbstractTemplatesTestCase {
 	private static final int TIMEOUT_MILLIS = 60;
 
 	// TODO - Replace this constant with an email that belongs to some user in the configured sfdc organization
-	private static final String USER_TO_UPDATE_EMAIL = "btest.one@mulesoft.com";
+	private static final String USER_TO_UPDATE_EMAIL = "noreply@chatter.salesforce.com";
 
 	private Map<String, Object> userToUpdate;
 	private SubflowInterceptingChainLifecycleWrapper updateUserInAFlow;
