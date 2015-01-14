@@ -101,7 +101,8 @@ column='486'
 
 ### As destination of data
 
-There are no particular considerations for this Anypoint Template regarding Siebel as data destination.
+There are no particular considerations for this Anypoint Template regarding Salesforce as data destination.
+
 
 
 
@@ -174,10 +175,21 @@ This property is an important one, as it configures what should be the start poi
 + sfdc.b.password `LaRanitaDeLaBicicleta456`
 + sfdc.b.securityToken `ces56arl7apQs56XTddf34X`
 + sfdc.b.url `https://login.salesforce.com/services/Soap/u/28.0`
-+ sfdc.b.integration.user.id= `A0ed000BO9T`  
++ sfdc.b.integration.user.id `A0ed000BO9T`  
 
-+ from.A.to.B.profilesMap `['00r80000001CEiGAAW': '00e80000110CDfGMAX','00e30000000ifQyAAI': '00q70000000fiQyEZI']`  
-+ from.B.to.A.profilesMap `['00r80000001CEiGAAW': '00e80000110CDfGMAX','00e30000000ifQyAAI': '00q70000000fiQyEZI']`  
+SalesForce's profiles are what define the permissions the user will have for manipulating data and other users.
+Each SalesForce account has its own profiles.
+
+This should be a map that associates a profile in sfdc A with a profile in sfdc B
+for example: ['SOME_PROFILE_IN_A': 'SOME_PROFILE_IN_B', 'ANOTHER_PROFILE_IN_A': 'ANOTHER_PROFILE_IN_B']
+
++ from.A.to.B.profilesMap `['00e200000015oKF': '00e20000001UzDx']`
+
+This should be a map that associates a profile in sfdc B with a profile in sfdc A
+for example: ['SOME_PROFILE_IN_B': 'SOME_PROFILE_IN_A', 'ANOTHER_PROFILE_IN_B': 'ANOTHER_PROFILE_IN_A']
+
++ from.B.to.A.profilesMap `['00e200000015oKF': '00e20000001UzDx']`
+
 The meaning of the properties above is defined in the second consideration on [the previous section](#afewconsiderations)
 
 # API Calls <a name="apicalls"/>
