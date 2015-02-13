@@ -22,6 +22,7 @@ import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Test;
 import org.mule.MessageExchangePattern;
 import org.mule.api.MuleException;
 import org.mule.api.lifecycle.InitialisationException;
@@ -142,7 +143,7 @@ public class BidirectionalUserSyncFromBtoATestIT extends AbstractTemplatesTestCa
 		queryUserFromBFlow.initialise();
 	}
 
-//	@Test
+	@Test
 	public void whenUpdatingAnUserInInstanceBTheBelongingUserGetsUpdatedInInstanceA()
 			throws MuleException, Exception {		
 		
