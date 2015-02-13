@@ -32,7 +32,7 @@ if(!(recordVars['userInTargetInstance'] is NullPayload)) {
 } else {
 	// Each Username should be UNIQUE even between different sandboxes of a single instance
 	payload.put('Username',  payload['Username'] + '.target');
-	payload.put('CommunityNickname',  payload['CommunityNickname'] + '.target');
+	
 }
 
 // We map the profile IDs from SalesForce instance A to B, each profileId from the left (source instance) will be map to the one on the right (target instance)
@@ -74,8 +74,7 @@ if(!(recordVars['userInTargetInstance'] is NullPayload)) {
 	payload.remove('Username');
 } else {
 	// Each Username should be UNIQUE even between different sandboxes of a single instance
-	payload.put('Username',  payload['Username'] + '.target');
-	payload.put('CommunityNickname',  payload['CommunityNickname'] + '.target');
+	payload.put('Username',  payload['Username'] + '.target');	
 }
 
 // We map the profile IDs from SalesForce instance A to B, each profileId from the left (source instance) will be map to the one on the right (target instance)
