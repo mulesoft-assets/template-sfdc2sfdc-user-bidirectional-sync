@@ -7,11 +7,14 @@
 package org.mule.templates.integration;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
+import java.io.FileInputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
@@ -26,6 +29,7 @@ import org.mule.api.lifecycle.InitialisationException;
 import org.mule.processor.chain.InterceptingChainLifecycleWrapper;
 import org.mule.processor.chain.SubflowInterceptingChainLifecycleWrapper;
 import org.mule.templates.AbstractTemplatesTestCase;
+import org.mule.transport.NullPayload;
 
 import com.mulesoft.module.batch.BatchTestHelper;
 
@@ -35,8 +39,9 @@ import com.mulesoft.module.batch.BatchTestHelper;
  * 
  */
 @SuppressWarnings("unchecked")
-public class BidirectionalUserSyncTestIT extends AbstractTemplatesTestCase {
+public class BidirectionalUserSyncFromAtoBTestIT extends AbstractTemplatesTestCase {
 
+	private static final String PATH_TO_TEST_PROPERTIES = "./src/test/resources/mule.test.properties";	
 	private static final String ANYPOINT_TEMPLATE_NAME = "user-bidirectional-sync";
 	private static final String A_INBOUND_FLOW_NAME = "triggerSyncFromAFlow";
 	private static final String B_INBOUND_FLOW_NAME = "triggerSyncFromBFlow";
@@ -45,13 +50,14 @@ public class BidirectionalUserSyncTestIT extends AbstractTemplatesTestCase {
 	// TODO - Replace this constant with an email that belongs to some user in the configured sfdc organization
 	private static final String USER_TO_UPDATE_EMAIL = "noreply@chatter.salesforce.com";
 
-	private Map<String, Object> userToUpdate;
 	private SubflowInterceptingChainLifecycleWrapper updateUserInAFlow;
 	private SubflowInterceptingChainLifecycleWrapper updateUserInBFlow;
 	private InterceptingChainLifecycleWrapper queryUserFromAFlow;
 	private InterceptingChainLifecycleWrapper queryUserFromBFlow;
 	private BatchTestHelper batchTestHelper;
-
+	private List<Map<String, Object>> userList; 
+	private static String TEST_USER_EMAIL;
+	
 	@BeforeClass
 	public static void beforeTestClass() {
 		System.setProperty("page.size", "1000");
@@ -69,11 +75,49 @@ public class BidirectionalUserSyncTestIT extends AbstractTemplatesTestCase {
 	}
 
 	@Before
-	public void setUp() throws MuleException {
+	public void setUp() throws Exception {
+		Properties props = new Properties();
+		try {			
+			props.load(new FileInputStream(PATH_TO_TEST_PROPERTIES));			
+		} catch (Exception e) {
+			throw new IllegalStateException(
+					"Could not find the test properties file.");
+		}		
+		TEST_USER_EMAIL  = props.getProperty("test.sfdc.a.user.email");
 		stopAutomaticPollTriggering();
 		getAndInitializeFlows();
 		
 		batchTestHelper = new BatchTestHelper(muleContext);
+		
+		updateTestEntities();
+	}
+
+	private void updateTestEntities() throws MuleException, Exception {
+		Map<String, Object> userToRetrieveMail = new HashMap<String, Object>();
+		userToRetrieveMail.put("Email", TEST_USER_EMAIL);
+
+		Map<String, Object> userToUpdate = (Map<String, Object>) queryUser(userToRetrieveMail, queryUserFromAFlow);
+		userList = new ArrayList<Map<String, Object>>();
+		userToUpdate.put("isActive", false);
+		userList.add(userToUpdate);			
+		updateUserInAFlow.process(getTestEvent(userList));		
+		
+		userToRetrieveMail = new HashMap<String, Object>();
+		userToRetrieveMail.put("Email", USER_TO_UPDATE_EMAIL);
+
+		Map<String, Object> userToUpdate1 = (Map<String, Object>) queryUser(userToRetrieveMail, queryUserFromAFlow);
+		
+		userToUpdate1.remove("type");
+		userToUpdate1.remove("Username");
+		userToUpdate1.remove("ProfileId");
+		userToUpdate1.put("FirstName", ANYPOINT_TEMPLATE_NAME + "-" + System.currentTimeMillis());
+		userToUpdate1.put("Title", "Doctor");
+		
+		userList = new ArrayList<Map<String, Object>>();
+		userList.add(userToUpdate1);
+		
+		updateUserInAFlow.process(getTestEvent(userList, MessageExchangePattern.REQUEST_RESPONSE));
+		userList.add(userToUpdate);
 	}
 
 	private void stopAutomaticPollTriggering() throws MuleException {
@@ -100,32 +144,21 @@ public class BidirectionalUserSyncTestIT extends AbstractTemplatesTestCase {
 	}
 
 	@Test
-	public void whenUpdatingAnUserInInstanceBTheBelongingUserGetsUpdatedInInstanceA()
-			throws MuleException, Exception {
-
-		Map<String, Object> userToRetrieveMail = new HashMap<String, Object>();
-		userToRetrieveMail.put("Email", USER_TO_UPDATE_EMAIL);
-
-		userToUpdate = (Map<String, Object>) queryUser(userToRetrieveMail, queryUserFromBFlow);
-		
-		userToUpdate.remove("type");
-		userToUpdate.remove("Username");
-		userToUpdate.put("FirstName", ANYPOINT_TEMPLATE_NAME + "-" + System.currentTimeMillis());
-		userToUpdate.put("Title", "Doctor");
-		
-		List<Map<String, Object>> userList = new ArrayList<Map<String, Object>>();
-		userList.add(userToUpdate);
-
-		updateUserInBFlow.process(getTestEvent(userList, MessageExchangePattern.REQUEST_RESPONSE));
+	public void whenUpdatingAnUserInInstanceATheBelongingUserGetsUpdatedInInstanceB()
+			throws MuleException, Exception {		
 		
 		// Execution
-		executeWaitAndAssertBatchJob(B_INBOUND_FLOW_NAME);
+		executeWaitAndAssertBatchJob(A_INBOUND_FLOW_NAME);
 		
 		// Assertions
-		Map<String, Object> payload = (Map<String, Object>) queryUser(userToRetrieveMail, queryUserFromBFlow);
+		Map<String, Object> payload = (Map<String, Object>) queryUser(userList.get(0), queryUserFromBFlow);
 
-		assertEquals("The user should have been sync and new name must match", userToUpdate.get("FirstName"), payload.get("FirstName"));
-		assertEquals("The user should have been sync and new title must match", userToUpdate.get("Title"), payload.get("Title"));
+		assertEquals("The user should have been sync and new name must match", userList.get(0).get("FirstName"), payload.get("FirstName"));
+		assertEquals("The user should have been sync and new title must match", userList.get(0).get("Title"), payload.get("Title"));
+		
+		Object response = queryUser(userList.get(1), queryUserFromBFlow);
+		assertTrue("The inactive user should have not been synced", response instanceof NullPayload);
+
 	}
 
 	private Object queryUser(Map<String, Object> user,
