@@ -45,7 +45,7 @@ public class BidirectionalUserSyncFromBtoATestIT extends AbstractTemplatesTestCa
 	private static final String ANYPOINT_TEMPLATE_NAME = "user-bidirectional-sync";
 	private static final String A_INBOUND_FLOW_NAME = "triggerSyncFromAFlow";
 	private static final String B_INBOUND_FLOW_NAME = "triggerSyncFromBFlow";
-	private static final int TIMEOUT_MILLIS = 60;
+	private static final int TIMEOUT_MILLIS = 120;
 
 	// TODO - Replace this constant with an email that belongs to some user in the configured sfdc organization
 	private static final String USER_TO_UPDATE_EMAIL = "noreply@chatter.salesforce.com";
@@ -100,7 +100,7 @@ public class BidirectionalUserSyncFromBtoATestIT extends AbstractTemplatesTestCa
 		userList = new ArrayList<Map<String, Object>>();
 		userToUpdate.put("isActive", false);
 		userList.add(userToUpdate);			
-		updateUserInAFlow.process(getTestEvent(userList));		
+		updateUserInBFlow.process(getTestEvent(userList));		
 		
 		userToRetrieveMail = new HashMap<String, Object>();
 		userToRetrieveMail.put("Email", USER_TO_UPDATE_EMAIL);
