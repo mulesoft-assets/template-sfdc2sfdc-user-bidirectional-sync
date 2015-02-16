@@ -115,7 +115,6 @@ public class BidirectionalUserSyncFromAtoBTestIT extends AbstractTemplatesTestCa
 		
 		userList = new ArrayList<Map<String, Object>>();
 		userList.add(userToUpdate1);
-		
 		updateUserInAFlow.process(getTestEvent(userList, MessageExchangePattern.REQUEST_RESPONSE));
 		userList.add(userToUpdate);
 	}
@@ -149,7 +148,7 @@ public class BidirectionalUserSyncFromAtoBTestIT extends AbstractTemplatesTestCa
 		
 		// Execution
 		executeWaitAndAssertBatchJob(A_INBOUND_FLOW_NAME);
-		
+		Thread.sleep(3000);
 		// Assertions
 		Map<String, Object> payload = (Map<String, Object>) queryUser(userList.get(0), queryUserFromBFlow);
 
