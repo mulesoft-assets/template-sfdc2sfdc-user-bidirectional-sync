@@ -1,45 +1,70 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
-<mule xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:objectstore="http://www.mulesoft.org/schema/mule/objectstore"
+<mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
+	xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:objectstore="http://www.mulesoft.org/schema/mule/objectstore"
 	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core"
 	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xmlns:sfdc="http://www.mulesoft.org/schema/mule/sfdc"
-	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
+	xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd
 http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
 http://www.mulesoft.org/schema/mule/objectstore http://www.mulesoft.org/schema/mule/objectstore/current/mule-objectstore.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
-http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd" version="EE-3.6.1">
+http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd" version="EE-3.7.0">
     
     <batch:job name="syncBatchA" max-failed-records="1">
         <batch:threading-profile poolExhaustedAction="WAIT"/>
         <batch:process-records>
             
             <batch:step name="getUserInBStep" >
-                <enricher source="#[payload]" target="#[recordVars['userInTargetInstance']]" doc:name="store user">
+                <enricher   doc:name="store existing user Id and LastModifiedDate in payload">
 	            	<sfdc:query-single config-ref="SalesforceB" query="SELECT Id, Email, LastModifiedDate FROM User WHERE (Email = '#[payload['Email']]')" doc:name="query user from B"/>
+                    <enrich source="#[payload == null ? null : payload.LastModifiedDate]" target="#[payload.LastModifiedDateB]"/>
+                    <enrich source="#[payload == null ? null : payload.Id]" target="#[payload.Id]"/>
                 </enricher>
             </batch:step>
             
-            <batch:step name="upsertUserInBStep" accept-expression="(recordVars['userInTargetInstance'] is NullPayload || recordVars['userInTargetInstance'].get('LastModifiedDate') &lt; payload.get('LastModifiedDate') &amp;&amp; '${sfdc.a.integration.user.id}' != payload.get('LastModifiedById'))">
-				<expression-component doc:name="prepare user for upsert"><![CDATA[payload.remove('LastModifiedById');
-payload.remove('LastModifiedDate');
+            <batch:step name="upsertUserInBStep" accept-expression="payload.Id == null ? true : payload.LastModifiedDateB &lt; payload.LastModifiedDate">
 
-if(!(recordVars['userInTargetInstance'] is NullPayload)) {
-	payload.put('Id',recordVars['userInTargetInstance'].get('Id'));
-	payload.remove('Username');
-} else {
-	// Each Username should be UNIQUE even between different sandboxes of a single instance
-	payload.put('Username',  payload['Username'] + '.target');
-	
-}
-
-// We map the profile IDs from SalesForce instance A to B, each profileId from the left (source instance) will be map to the one on the right (target instance)
-profilesMap = ${from.A.to.B.profilesMap};
-payload.put('ProfileId', profilesMap.get( payload['ProfileId'] ));
-]]></expression-component>
                 <batch:commit size="200" doc:name="Batch Commit">
+                    <set-variable variableName="profilesMapAtoB" value="#[${from.A.to.B.profilesMap}]" doc:name="Set profilesMapAtoB variable"/>
+                <dw:transform-message doc:name="setup Users for upsert">
+                        <dw:set-payload><![CDATA[%dw 1.0
+%input payload application/java
+%output application/java
+---
+payload map {
+	(Id: $.Id) when ($.Id != null),	
+	Email: $.Email,
+	Title: $.Title,
+	FirstName: $.FirstName, 
+	LastName: $.LastName, 
+	Username: $.Username ++ '.target', 
+	Alias: $.Alias, 
+	TimeZoneSidKey: $.TimeZoneSidKey, 
+	LocaleSidKey: $.LocaleSidKey, 
+	EmailEncodingKey: $.EmailEncodingKey, 
+	ProfileId: flowVars.profilesMapAtoB[$.ProfileId], 
+	LanguageLocaleKey: $.LanguageLocaleKey,
+	AboutMe: $.AboutMe,
+	City: $.City,
+	CompanyName: $.CompanyName,
+	Country: $.Country,
+	Department: $.Department,
+	Division: $.Division,
+	Fax: $.Fax,
+	FirstName: $.FirstName,
+	MobilePhone: $.MobilePhone,
+	Phone: $.Phone,
+	PostalCode: $.PostalCode,
+	State: $.State,
+	Street: $.Street
+}]]></dw:set-payload>
+                    </dw:transform-message>
+                    <logger message="Users to create: #[payload]" level="INFO" doc:name="log Users to create"/>
+					
 			        <sfdc:upsert config-ref="SalesforceB" externalIdFieldName="Id" type="User" doc:name="upsert user in B">
 			            <sfdc:objects ref="#[payload]"/>
 			        </sfdc:upsert>
@@ -60,27 +85,51 @@ payload.put('ProfileId', profilesMap.get( payload['ProfileId'] ));
 
             
             <batch:step name="getUserInAStep" >
-                <enricher source="#[payload]" target="#[recordVars['userInTargetInstance']]" doc:name="store user">
-		            <sfdc:query-single config-ref="SalesforceA" query="SELECT Id, Email, LastModifiedDate FROM User WHERE (Email = '#[payload['Email']]')" doc:name="query user from A"/>
-                </enricher>
+                <enricher   doc:name="store existing user Id and LastModifiedDate in payload">
+	            	<sfdc:query-single config-ref="SalesforceA" query="SELECT Id, Email, LastModifiedDate FROM User WHERE (Email = '#[payload['Email']]')" doc:name="query user from A"/>
+                	<enrich source="#[payload == null ? null : payload.LastModifiedDate]" target="#[payload.LastModifiedDateA]"/>
+                    <enrich source="#[payload == null ? null : payload.Id]" target="#[payload.Id]"/>
+		        </enricher>
             </batch:step>
             
-            <batch:step name="upsertUserInAStep" accept-expression="(recordVars['userInTargetInstance'] is NullPayload || recordVars['userInTargetInstance'].get('LastModifiedDate') &lt; payload.get('LastModifiedDate') &amp;&amp; '${sfdc.b.integration.user.id}' != payload.get('LastModifiedById'))">
-				<expression-component doc:name="prepare user for upsert"><![CDATA[payload.remove('LastModifiedById');
-payload.remove('LastModifiedDate');
+            <batch:step name="upsertUserInAStep" accept-expression="payload.Id == null ? true : payload.LastModifiedDateA &lt; payload.LastModifiedDate">
 
-if(!(recordVars['userInTargetInstance'] is NullPayload)) {
-	payload.put('Id',recordVars['userInTargetInstance'].get('Id'));
-	payload.remove('Username');
-} else {
-	// Each Username should be UNIQUE even between different sandboxes of a single instance
-	payload.put('Username',  payload['Username'] + '.target');	
-}
-
-// We map the profile IDs from SalesForce instance A to B, each profileId from the left (source instance) will be map to the one on the right (target instance)
-profilesMap = ${from.B.to.A.profilesMap};
-payload.put('ProfileId', profilesMap.get( payload['ProfileId'] ));]]></expression-component>
                 <batch:commit size="200" doc:name="Batch Commit">
+                    <set-variable variableName="profilesMapBtoA" value="#[${from.B.to.A.profilesMap}]" doc:name="Set profilesMapBtoA variable"/>
+                    <dw:transform-message doc:name="setup Users for upsert">
+                        <dw:set-payload><![CDATA[%dw 1.0
+%input payload application/java
+%output application/java
+---
+payload map {
+	(Id: $.Id) when ($.Id != null),	
+	Email: $.Email,
+	Title: $.Title,
+	FirstName: $.FirstName, 
+	LastName: $.LastName, 
+	Username: $.Username ++ '.target', 
+	Alias: $.Alias, 
+	TimeZoneSidKey: $.TimeZoneSidKey, 
+	LocaleSidKey: $.LocaleSidKey, 
+	EmailEncodingKey: $.EmailEncodingKey, 
+	ProfileId: flowVars.profilesMapBtoA[$.ProfileId], 
+	LanguageLocaleKey: $.LanguageLocaleKey,
+	AboutMe: $.AboutMe,
+	City: $.City,
+	CompanyName: $.CompanyName,
+	Country: $.Country,
+	Department: $.Department,
+	Division: $.Division,
+	Fax: $.Fax,
+	FirstName: $.FirstName,
+	MobilePhone: $.MobilePhone,
+	Phone: $.Phone,
+	PostalCode: $.PostalCode,
+	State: $.State,
+	Street: $.Street
+}]]></dw:set-payload>
+                    </dw:transform-message>
+                    <logger message="Users to create: #[payload]" level="INFO" doc:name="log Users to create"/>
 			        <sfdc:upsert config-ref="SalesforceA" externalIdFieldName="Id" type="User" doc:name="upsert user in A">
 			            <sfdc:objects ref="#[payload]"/>
 			        </sfdc:upsert>
