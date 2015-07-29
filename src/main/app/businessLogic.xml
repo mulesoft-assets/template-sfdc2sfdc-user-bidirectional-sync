@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <mule xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw"
-	xmlns:batch="http://www.mulesoft.org/schema/mule/batch" xmlns:objectstore="http://www.mulesoft.org/schema/mule/objectstore"
+	xmlns:batch="http://www.mulesoft.org/schema/mule/batch"
 	xmlns:tracking="http://www.mulesoft.org/schema/mule/ee/tracking" xmlns="http://www.mulesoft.org/schema/mule/core"
 	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
 	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
@@ -10,7 +10,6 @@
 http://www.mulesoft.org/schema/mule/ee/tracking http://www.mulesoft.org/schema/mule/ee/tracking/current/mule-tracking-ee.xsd
 http://www.mulesoft.org/schema/mule/sfdc http://www.mulesoft.org/schema/mule/sfdc/current/mule-sfdc.xsd
 http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
-http://www.mulesoft.org/schema/mule/objectstore http://www.mulesoft.org/schema/mule/objectstore/current/mule-objectstore.xsd
 http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
 http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/batch/current/mule-batch.xsd" version="EE-3.7.0">
     
@@ -32,7 +31,6 @@ http://www.mulesoft.org/schema/mule/batch http://www.mulesoft.org/schema/mule/ba
                     <set-variable variableName="profilesMapAtoB" value="#[${from.A.to.B.profilesMap}]" doc:name="Set profilesMapAtoB variable"/>
                 <dw:transform-message doc:name="setup Users for upsert">
                         <dw:set-payload><![CDATA[%dw 1.0
-%input payload application/java
 %output application/java
 ---
 payload map {
@@ -98,7 +96,6 @@ payload map {
                     <set-variable variableName="profilesMapBtoA" value="#[${from.B.to.A.profilesMap}]" doc:name="Set profilesMapBtoA variable"/>
                     <dw:transform-message doc:name="setup Users for upsert">
                         <dw:set-payload><![CDATA[%dw 1.0
-%input payload application/java
 %output application/java
 ---
 payload map {

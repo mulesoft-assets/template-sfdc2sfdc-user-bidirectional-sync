@@ -167,6 +167,8 @@ This are the miliseconds (also different time units can be used) that will run b
 + watermark.default.expression `2014-02-25T11:00:00.000Z`  
 This property is an important one, as it configures what should be the start point of the synchronization.The date format accepted in SFDC Query Language is either *YYYY-MM-DDThh:mm:ss+hh:mm* or you can use Constants. [More information about Dates in SFDC][3]
 
++ page.size `200`
+
 #### SalesForce Connector configuration for company A
 + sfdc.a.username `jorge.drexler@mail.com`
 + sfdc.a.password `Noctiluca123`
