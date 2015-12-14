@@ -47,8 +47,8 @@ public class BidirectionalUserSyncFromBtoATestIT extends AbstractTemplatesTestCa
 	private static final String B_INBOUND_FLOW_NAME = "triggerSyncFromBFlow";
 	private static final int TIMEOUT_MILLIS = 120;
 
-	// TODO - Replace this constant with an email that belongs to some user in the configured sfdc organization
-	private static final String USER_TO_UPDATE_EMAIL = "noreply@chatter.salesforce.com";
+	private static String TEST_ACTIVE_USER_EMAIL;
+	private static String TEST_NOTACTIVE_USER_EMAIL;
 
 	private SubflowInterceptingChainLifecycleWrapper updateUserInAFlow;
 	private SubflowInterceptingChainLifecycleWrapper updateUserInBFlow;
@@ -56,7 +56,6 @@ public class BidirectionalUserSyncFromBtoATestIT extends AbstractTemplatesTestCa
 	private InterceptingChainLifecycleWrapper queryUserFromBFlow;
 	private BatchTestHelper batchTestHelper;
 	private List<Map<String, Object>> userList; 
-	private static String TEST_USER_EMAIL;
 	
 	@BeforeClass
 	public static void beforeTestClass() {
@@ -83,7 +82,8 @@ public class BidirectionalUserSyncFromBtoATestIT extends AbstractTemplatesTestCa
 			throw new IllegalStateException(
 					"Could not find the test properties file.");
 		}		
-		TEST_USER_EMAIL  = props.getProperty("test.sfdc.b.user.email");
+		TEST_ACTIVE_USER_EMAIL  = props.getProperty("test.sfdc.b.active.user.email");
+		TEST_NOTACTIVE_USER_EMAIL  = props.getProperty("test.sfdc.b.notactive.user.email");
 		stopAutomaticPollTriggering();
 		getAndInitializeFlows();
 		
@@ -94,7 +94,7 @@ public class BidirectionalUserSyncFromBtoATestIT extends AbstractTemplatesTestCa
 
 	private void updateTestEntities() throws MuleException, Exception {
 		Map<String, Object> userToRetrieveMail = new HashMap<String, Object>();
-		userToRetrieveMail.put("Email", TEST_USER_EMAIL);
+		userToRetrieveMail.put("Email", TEST_NOTACTIVE_USER_EMAIL);
 
 		Map<String, Object> userToUpdate = (Map<String, Object>) queryUser(userToRetrieveMail, queryUserFromBFlow);
 		userList = new ArrayList<Map<String, Object>>();
@@ -103,7 +103,7 @@ public class BidirectionalUserSyncFromBtoATestIT extends AbstractTemplatesTestCa
 		updateUserInBFlow.process(getTestEvent(userList));		
 		
 		userToRetrieveMail = new HashMap<String, Object>();
-		userToRetrieveMail.put("Email", USER_TO_UPDATE_EMAIL);
+		userToRetrieveMail.put("Email", TEST_ACTIVE_USER_EMAIL);
 
 		Map<String, Object> userToUpdate1 = (Map<String, Object>) queryUser(userToRetrieveMail, queryUserFromBFlow);
 		
