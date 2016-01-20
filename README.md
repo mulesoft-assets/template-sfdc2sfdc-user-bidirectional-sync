@@ -174,14 +174,18 @@ This property is an important one, as it configures what should be the start poi
 + sfdc.a.password `Noctiluca123`
 + sfdc.a.securityToken `avsfwCUl7apQs56Xq2AKi3X`
 + sfdc.a.url `https://login.salesforce.com/services/Soap/u/32.0`
-+ sfdc.a.integration.user.id= `A0ed000BO9T`  
++ sfdc.a.integration.user.id= `A0ed000BO9T`
+
+	**Note:** To find out the correct *sfdc.integration.user.id* value, please, refer to example project **Salesforce Data Retrieval** in [Anypoint Exchange](http://www.mulesoft.org/documentation/display/current/Anypoint+Exchange). 
 
 #### SalesForce Connector configuration for company B
 + sfdc.b.username `mariano.cozzi@mail.com`
 + sfdc.b.password `LaRanitaDeLaBicicleta456`
 + sfdc.b.securityToken `ces56arl7apQs56XTddf34X`
 + sfdc.b.url `https://login.salesforce.com/services/Soap/u/32.0`
-+ sfdc.b.integration.user.id `A0ed000BO9T`  
++ sfdc.b.integration.user.id `A0ed000BO9T`
+
+	**Note:** To find out the correct *sfdc.integration.user.id* value, please, refer to example project **Salesforce Data Retrieval** in [Anypoint Exchange](http://www.mulesoft.org/documentation/display/current/Anypoint+Exchange).
 
 SalesForce's profiles are what define the permissions the user will have for manipulating data and other users.
 Each SalesForce account has its own profiles.
