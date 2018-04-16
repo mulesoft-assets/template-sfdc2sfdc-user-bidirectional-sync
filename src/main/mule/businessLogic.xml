@@ -104,7 +104,7 @@ payload map ((item) -> {
 }]]]></salesforce:parameters>
 					</salesforce:query-single>
 					<ee:transform doc:name="Add SFDC User Id to payload"
-						doc:id="c9685fd5-458b-4888-b848-0b31d4b39c38">
+						doc:id="c9685fd5-458b-4888-b848-0b31d4b39c39">
 						<ee:message>
 							<ee:set-payload><![CDATA[%dw 2.0
 output application/java
