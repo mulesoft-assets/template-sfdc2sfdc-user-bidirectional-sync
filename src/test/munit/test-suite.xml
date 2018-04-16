@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:munit="http://www.mulesoft.org/schema/mule/munit"
+	xmlns:munit-tools="http://www.mulesoft.org/schema/mule/munit-tools" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd 
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+		http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+		http://www.mulesoft.org/schema/mule/munit http://www.mulesoft.org/schema/mule/munit/current/mule-munit.xsd
+		http://www.mulesoft.org/schema/mule/munit-tools  http://www.mulesoft.org/schema/mule/munit-tools/current/mule-munit-tools.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<munit:config name="test-suite.xml" />
+
+	<configuration-properties doc:name="Configuration properties" file="mule.${mule.env}.properties" />
+	<configuration-properties doc:name="Configuration properties" file="common.properties" />
+	<configuration-properties doc:name="Configuration properties" file="mule-artifact.properties" />
+
+	<salesforce:sfdc-config name="Salesforce_Sfdc_A_test_config" doc:name="Salesforce Sfdc A test config">
+		<salesforce:basic-connection username="${test.sfdc.a.username}" password="${test.sfdc.a.password}"
+			securityToken="${test.sfdc.a.securityToken}" />
+	</salesforce:sfdc-config>
+
+	<salesforce:sfdc-config name="Salesforce_Sfdc_B_test_config" doc:name="Salesforce Sfdc B test config">
+		<salesforce:basic-connection username="${test.sfdc.b.username}" password="${test.sfdc.b.password}"
+			securityToken="${test.sfdc.b.securityToken}" />
+	</salesforce:sfdc-config>
+
+	<munit:before-test name="test-suiteBefore_Test" description="Before tests actions">
+		<salesforce:query doc:id="3f841734-91ec-427f-be1d-19b6f0c595bb" doc:name="Get IdsA" config-ref="Salesforce_Sfdc_A_test_config">
+			<salesforce:salesforce-query>SELECT Id, LastName FROM User WHERE Email in (':emailAB')</salesforce:salesforce-query>
+			<salesforce:parameters><![CDATA[#[output applicaton/java
+---
+{
+	"emailAB" : p('email.a.b')
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<ee:transform doc:name="Save old data from instance A" doc:id="69f649c1-6001-4936-8f88-c2f78943eed3">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="oldDataA"><![CDATA[%dw 2.0
+output application/java
+---
+payload map ($ - 'type')]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name='Prepare testing data for instance A' doc:id="8d6d89fd-ce2c-4d0b-9ef2-a48f7104de46">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="newDataA"><![CDATA[%dw 2.0
+output application/java
+---
+vars.oldDataA map ((data, index) -> 
+	data - "LastName" ++ {"LastName":"LastNameA" ++ randomInt(1000)}
+)]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<salesforce:update type="User" doc:name="Update data in instance A" doc:id="ee5f33b7-73d4-45c6-93ed-68beadaf63d6"
+			config-ref="Salesforce_Sfdc_A_test_config">
+			<salesforce:records><![CDATA[#[vars.newDataA]]]></salesforce:records>
+		</salesforce:update>
+		<scripting:execute engine="groovy" doc:name="Sleep for 1s before we update user in B" doc:id="68f96218-bb52-4fbc-92c8-1b014988e3e0">
+			<scripting:code>sleep(1000)</scripting:code>
+		</scripting:execute>
+		<salesforce:query doc:name="Get IdsB" doc:id="3f841734-91ec-427f-be1d-19b6f0c595bb" config-ref="Salesforce_Sfdc_B_test_config">
+			<salesforce:salesforce-query>SELECT Id, Email, LastName FROM User WHERE Email in (':emailAB')</salesforce:salesforce-query>
+			<salesforce:parameters><![CDATA[#[output applicaton/java
+---
+{
+	"emailAB" : p('email.a.b')
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<ee:transform doc:name="Save old data from instance B" doc:id="77f4f1f8-1805-431a-b452-d8d14842b91e">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="oldDataB"><![CDATA[%dw 2.0
+output application/java
+---
+payload map ($ - 'type')]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<ee:transform doc:name="Prepare testing data for instance B" doc:id="8d6d89fd-ce2c-4d0b-9ef2-a48f7104de46">
+			<ee:message>
+			</ee:message>
+			<ee:variables>
+				<ee:set-variable variableName="newDataB"><![CDATA[%dw 2.0
+output application/java
+---
+vars.oldDataB map ((data, index) -> 
+	data - "LastName" ++ {"LastName":"LastNameB" ++ randomInt(1000)}
+)]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<salesforce:update type="User" doc:name="Update data in instance B" doc:id="e449ee68-b73b-4714-b427-f3a5a0fdd73e"
+			config-ref="Salesforce_Sfdc_B_test_config">
+			<salesforce:records><![CDATA[#[vars.newDataB]]]></salesforce:records>
+		</salesforce:update>
+	</munit:before-test>
+	<munit:test name="test-suite-sfdcQueryFlowATest" description="Test" doc:id="6332c58f-ba5b-451a-8ca7-8d677e31fa9d">
+		<munit:execution>
+			<scripting:execute doc:name="Sleep for 10s before we start tests" doc:id="68f96218-bb52-4fbc-92c8-1b014988e3e1" engine="groovy">
+				<scripting:code>sleep(10000)</scripting:code>
+			</scripting:execute>
+			<flow-ref doc:name="sfdcQueryFlowA" doc:id="e0479714-bce3-4ea8-9fbc-1c8ed7b5d185" name="sfdcQueryFlowA" />
+			<flow-ref doc:name="fromSalesforceAtoSalesforceB" doc:id="5592c1fa-6dc8-4956-b894-e0e2b025918f" name="fromSalesforceAtoSalesforceB" />
+			<scripting:execute doc:name="Sleep for 30s until the processing is completed" doc:id="b09fe305-3000-4571-b824-8b555395ccb7"
+				engine="groovy">
+				<scripting:code>sleep(30000)</scripting:code>
+			</scripting:execute>
+			<salesforce:query doc:name="Query for User, which should not be updated in instance B" config-ref="Salesforce_Sfdc_B_test_config">
+				<salesforce:salesforce-query>SELECT LastName FROM User WHERE Email = ':email'</salesforce:salesforce-query>
+				<salesforce:parameters><![CDATA[#[output applicaton/java
+---
+{
+	"email" : p('email.a.b')
+}]]]></salesforce:parameters>
+			</salesforce:query>
+			<set-variable value="#[payload[0].LastName]" doc:name=" Set Variable for assertion" doc:id="95c89be7-1756-40fd-b198-2b1334bf6979"
+				variableName="resultLastNameNotInB" />
+			<munit-tools:assert-that doc:name="Assert that User in B is not updated" doc:id="1e559409-a86b-47b9-bb44-cbcac54c4ade"
+				expression="#[vars.resultLastNameNotInB]" is="#[MunitTools::equalTo(vars.newDataB[0].LastName)]" message="User in B is updated" />
+		</munit:execution>
+		<munit:validation>
+			<munit-tools:verify-call doc:name="Verify call" doc:id="d169a8c9-05fa-410f-bf1f-679ac50991ea" processor="salesforce:upsert"
+				times="0" />
+			<munit-tools:verify-call doc:name="Verify call" doc:id="6615e195-e10d-4e56-8116-3ab61227a26c" processor="ee:transform"
+				atLeast="1">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute attributeName="doc:id" whereValue="c9685fd5-458b-4888-b848-0b31d4b39c38" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+
+	<munit:test name="test-suite-sfdcQueryFlowBTest" description="Test" doc:id="a1717021-c9a9-4eaf-8798-43d65a776cc3">
+		<munit:execution>
+			<scripting:execute doc:name="Sleep for 10s before we start tests" doc:id="68f96218-bb52-4fbc-92c8-1b014988e3e2" engine="groovy">
+				<scripting:code>sleep(10000)</scripting:code>
+			</scripting:execute>
+			<flow-ref doc:name="sfdcQueryFlowB" doc:id="e0479714-bce3-4ea8-9fbc-1c8ed7b5d185" name="sfdcQueryFlowB" />
+			<flow-ref doc:name="fromSalesforceBtoSalesforceA" doc:id="5592c1fa-6dc8-4956-b894-e0e2b025918f" name="fromSalesforceBtoSalesforceA" />
+			<scripting:execute doc:name="Sleep for 30s until the processing is completed" doc:id="b09fe305-3000-4571-b824-8b555395ccb7"
+				engine="groovy">
+				<scripting:code>sleep(30000)</scripting:code>
+			</scripting:execute>
+			<salesforce:query doc:name="Query for User, which should be updated in instance A" config-ref="Salesforce_Sfdc_A_test_config">
+				<salesforce:salesforce-query>SELECT LastName FROM User WHERE Email = ':email'</salesforce:salesforce-query>
+				<salesforce:parameters><![CDATA[#[output applicaton/java
+---
+{
+	"email" : p('email.a.b')
+}]]]></salesforce:parameters>
+			</salesforce:query>
+			<set-variable value="#[payload[0].LastName]" doc:name=" Set Variable for assertion" doc:id="95c89be7-1756-40fd-b198-2b1334bf6979"
+				variableName="resultLastNameInA" />
+			<munit-tools:assert-that doc:name="Assert that we find updated User in A" doc:id="1e559409-a86b-47b9-bb44-cbcac54c4ade"
+				expression="#[vars.resultLastNameInA]" is="#[MunitTools::equalTo(vars.newDataB[0].LastName)]" message="Updated User in A is not found" />
+		</munit:execution>
+		<munit:validation>
+			<munit-tools:verify-call doc:name="Verify call" doc:id="d169a8c9-05fa-410f-bf1f-679ac50991ea" processor="salesforce:upsert"
+				times="1" />
+			<munit-tools:verify-call doc:name="Verify call" doc:id="6615e195-e10d-4e56-8116-3ab61227a26c" processor="ee:transform"
+				atLeast="1">
+				<munit-tools:with-attributes>
+					<munit-tools:with-attribute attributeName="doc:id" whereValue="c9685fd5-458b-4888-b848-0b31d4b39c39" />
+				</munit-tools:with-attributes>
+			</munit-tools:verify-call>
+		</munit:validation>
+	</munit:test>
+
+	<munit:after-test name="test-suiteAfter_Test" description="After tests actions" doc:id="5b85bb9e-67e6-47f7-8f71-53a39f147fc8">
+		<salesforce:update type="User" doc:name="Revert data in instance A" doc:id="560ac0b4-eef4-4ae3-bd56-a9505c16a914"
+			config-ref="Salesforce_Sfdc_A_test_config">
+			<salesforce:records><![CDATA[#[vars.oldDataA]]]></salesforce:records>
+		</salesforce:update>
+		<salesforce:update type="User" doc:name="Revert data in instance B" doc:id="6f0106c7-55c8-4b7d-b2fd-13ea79c01467"
+			config-ref="Salesforce_Sfdc_B_test_config">
+			<salesforce:records><![CDATA[#[vars.oldDataB]]]></salesforce:records>
+		</salesforce:update>
+	</munit:after-test>
+</mule>
