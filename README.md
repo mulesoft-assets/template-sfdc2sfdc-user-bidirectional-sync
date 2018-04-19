@@ -106,10 +106,8 @@ First thing to know if you are a newcomer to Mule is where to get the tools.
 ### Importing an Anypoint Template into Studio
 Mule Studio offers several ways to import a project into the workspace, for instance: 
 
-+ Anypoint Studio generated Deployable Archive (.zip)
-+ Anypoint Studio Project from External Location
-+ Maven-based Mule Project from pom.xml
-+ Mule ESB Configuration XML from External Location
++ Anypoint Studio Project from File System
++ Packaged mule application (.jar)
 
 You can find a detailed description on how to do so in this [Documentation Page](http://www.mulesoft.org/documentation/display/current/Importing+and+Exporting+in+Studio).
 
@@ -155,7 +153,7 @@ if today is April 21st of 2018 and it's eleven o'clock in London, then you could
 + page.size `1000`
 
 
-#### SalesForce Connector configuration for company A**
+#### SalesForce Connector configuration for company A
 
 + sfdc.a.username `jorge.drexler@mail.com`
 + sfdc.a.password `Noctiluca123`
@@ -164,7 +162,7 @@ if today is April 21st of 2018 and it's eleven o'clock in London, then you could
 
 	**Note:** To find out the correct *sfdc.a.integration.user.id* value, please, refer to example project **Salesforce Data Retrieval** in [Anypoint Exchange](http://www.mulesoft.org/documentation/display/current/Anypoint+Exchange).
 
-#### SalesForce Connector configuration for company B**
+#### SalesForce Connector configuration for company B
 
 + sfdc.b.username `mariano.cozzi@mail.com`
 + sfdc.b.password `LaRanitaDeLaBicicleta456`
