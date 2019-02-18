@@ -13,8 +13,6 @@ http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mu
 	<munit:config name="test-suite.xml" />
 
 	<configuration-properties doc:name="Configuration properties" file="mule.test.properties" />
-	<configuration-properties doc:name="Configuration properties" file="common.properties" />
-	<configuration-properties doc:name="Configuration properties" file="mule-artifact.properties" />
 
 	<salesforce:sfdc-config name="Salesforce_Sfdc_A_test_config" doc:name="Salesforce Sfdc A test config">
 		<salesforce:basic-connection username="${test.sfdc.a.username}" password="${test.sfdc.a.password}"
@@ -110,20 +108,17 @@ vars.oldDataB map ((data, index) ->
 				engine="groovy">
 				<scripting:code>sleep(30000)</scripting:code>
 			</scripting:execute>
-			<salesforce:query doc:name="Query for User, which should not be updated in instance B" config-ref="Salesforce_Sfdc_B_test_config">
+			<salesforce:query doc:name="Query for User, which should not be updated in instance B" config-ref="Salesforce_Sfdc_B_test_config" target="resultNotInB">
 				<salesforce:salesforce-query>SELECT LastName FROM User WHERE Email = ':email'</salesforce:salesforce-query>
-				<salesforce:parameters><![CDATA[#[output applicaton/java
+				<salesforce:parameters><![CDATA[#[output application/java
 ---
 {
 	"email" : p('email.a.b')
 }]]]></salesforce:parameters>
 			</salesforce:query>
-			<set-variable value="#[payload[0].LastName]" doc:name=" Set Variable for assertion" doc:id="95c89be7-1756-40fd-b198-2b1334bf6979"
-				variableName="resultLastNameNotInB" />
-			<munit-tools:assert-that doc:name="Assert that User in B is not updated" doc:id="1e559409-a86b-47b9-bb44-cbcac54c4ade"
-				expression="#[vars.resultLastNameNotInB]" is="#[MunitTools::equalTo(vars.newDataB[0].LastName)]" message="User in B is updated" />
 		</munit:execution>
 		<munit:validation>
+			<munit-tools:assert-that doc:name="Assert that User in B is not updated" doc:id="1e559409-a86b-47b9-bb44-cbcac54c4ade" expression="#[vars.resultNotInB[0].LastName]" is="#[MunitTools::equalTo(vars.newDataB[0].LastName)]" message="User in B is updated" />
 			<munit-tools:verify-call doc:name="Verify call" doc:id="d169a8c9-05fa-410f-bf1f-679ac50991ea" processor="salesforce:upsert"
 				times="0" />
 			<munit-tools:verify-call doc:name="Verify call" doc:id="6615e195-e10d-4e56-8116-3ab61227a26c" processor="ee:transform"
@@ -146,20 +141,17 @@ vars.oldDataB map ((data, index) ->
 				engine="groovy">
 				<scripting:code>sleep(30000)</scripting:code>
 			</scripting:execute>
-			<salesforce:query doc:name="Query for User, which should be updated in instance A" config-ref="Salesforce_Sfdc_A_test_config">
+			<salesforce:query doc:name="Query for User, which should be updated in instance A" config-ref="Salesforce_Sfdc_A_test_config" target="resultInA">
 				<salesforce:salesforce-query>SELECT LastName FROM User WHERE Email = ':email'</salesforce:salesforce-query>
-				<salesforce:parameters><![CDATA[#[output applicaton/java
+				<salesforce:parameters><![CDATA[#[output application/java
 ---
 {
 	"email" : p('email.a.b')
 }]]]></salesforce:parameters>
 			</salesforce:query>
-			<set-variable value="#[payload[0].LastName]" doc:name=" Set Variable for assertion" doc:id="95c89be7-1756-40fd-b198-2b1334bf6979"
-				variableName="resultLastNameInA" />
-			<munit-tools:assert-that doc:name="Assert that we find updated User in A" doc:id="1e559409-a86b-47b9-bb44-cbcac54c4ade"
-				expression="#[vars.resultLastNameInA]" is="#[MunitTools::equalTo(vars.newDataB[0].LastName)]" message="Updated User in A is not found" />
 		</munit:execution>
 		<munit:validation>
+			<munit-tools:assert-that doc:name="Assert that we've found updated User in A" doc:id="1e559409-a86b-47b9-bb44-cbcac54c4ade" expression="#[vars.resultInA[0].LastName]" is="#[MunitTools::equalTo(vars.newDataB[0].LastName)]" message="Updated User in A is not found" />
 			<munit-tools:verify-call doc:name="Verify call" doc:id="d169a8c9-05fa-410f-bf1f-679ac50991ea" processor="salesforce:upsert"
 				times="1" />
 			<munit-tools:verify-call doc:name="Verify call" doc:id="6615e195-e10d-4e56-8116-3ab61227a26c" processor="ee:transform"
