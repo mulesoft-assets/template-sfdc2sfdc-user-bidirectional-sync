@@ -151,7 +151,7 @@ vars.oldDataB map ((data, index) ->
 			</salesforce:query>
 		</munit:execution>
 		<munit:validation>
-			<munit-tools:assert-that doc:name="Assert that we find updated User in A" doc:id="1e559409-a86b-47b9-bb44-cbcac54c4ade" expression="#[vars.resultInA[0].LastName]" is="#[MunitTools::equalTo(vars.newDataB[0].LastName)]" message="Updated User in A is not found" />
+			<munit-tools:assert-that doc:name="Assert that we've found updated User in A" doc:id="1e559409-a86b-47b9-bb44-cbcac54c4ade" expression="#[vars.resultInA[0].LastName]" is="#[MunitTools::equalTo(vars.newDataB[0].LastName)]" message="Updated User in A is not found" />
 			<munit-tools:verify-call doc:name="Verify call" doc:id="d169a8c9-05fa-410f-bf1f-679ac50991ea" processor="salesforce:upsert"
 				times="1" />
 			<munit-tools:verify-call doc:name="Verify call" doc:id="6615e195-e10d-4e56-8116-3ab61227a26c" processor="ee:transform"
