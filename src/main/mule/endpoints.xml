@@ -69,7 +69,7 @@ http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/cu
 	<flow name="sfdcQueryFlowA">
 		<os:retrieve key="watermark" objectStore="watermarkStoreA"
 			target="lastQueryDateA" doc:name="Retrieve lastQueryDateA">
-			<os:default-value><![CDATA[#[${watermark.default.expression}]]]></os:default-value>
+			<os:default-value><![CDATA[[${watermark.default.expression}]]]></os:default-value>
 		</os:retrieve>
 		<salesforce:query config-ref="Salesforce_Sfdc_A_config"
 			doc:name="Query User with filtering criteria from Salesforce Instance A">
@@ -93,7 +93,7 @@ http://www.mulesoft.org/schema/mule/os http://www.mulesoft.org/schema/mule/os/cu
 	<flow name="sfdcQueryFlowB">
 		<os:retrieve key="watermark" objectStore="watermarkStoreB"
 			target="lastQueryDateB" doc:name="Retrieve lastQueryDateB">
-			<os:default-value><![CDATA[#[${watermark.default.expression}]]]></os:default-value>
+			<os:default-value><![CDATA[[${watermark.default.expression}]]]></os:default-value>
 		</os:retrieve>
 		<salesforce:query config-ref="Salesforce_Sfdc_B_config"
 			doc:name="Query User with filtering criteria from Salesforce Instance B">
